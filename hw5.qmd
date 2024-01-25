@@ -36,6 +36,7 @@ We will need the following packages:
 
 ```{R, message=FALSE, warning=FALSE, results='hide'}
 packages <- c(
+  "tibble",
   "dplyr", 
   "readr", 
   "tidyr", 
@@ -457,7 +458,7 @@ generate_three_spirals <- function(){
       rep(2, n)
     )
   )
-  return(tibble(x1=x1, x2=x2, y=y))
+  return(tibble::tibble(x1=x1, x2=x2, y=y))
 }
 ```
 
