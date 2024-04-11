@@ -1,6 +1,6 @@
 ---
 title: "Homework 5"
-author: "[Insert your name here]{style='background-color: yellow;'}"
+author: "[Matt Viana]{style='background-color: yellow;'}"
 toc: true
 title-block-banner: true
 title-block-style: default
@@ -12,27 +12,32 @@ format:
   # pdf: 
     fig-width: 7
     fig-height: 7
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-
----
+------------------------------------------------------------------------
 
 ::: {.callout-important style="font-size: 0.8em;"}
+Please read the instructions carefully before submitting your
+assignment.
 
-Please read the instructions carefully before submitting your assignment.
+1.  This assignment requires you to only upload a `PDF` file on Canvas
+2.  Don't collapse any code cells before submitting.
+3.  Remember to make sure all your code output is rendered properly
+    before uploading your submission.
 
-1. This assignment requires you to only upload a `PDF` file on Canvas
-1. Don't collapse any code cells before submitting. 
-1. Remember to make sure all your code output is rendered properly before uploading your submission.
-
-⚠️ Please add your name to the author information in the frontmatter before submitting your assignment ⚠️
+⚠️ Please add your name to the author information in the frontmatter
+before submitting your assignment ⚠️
 :::
 
-
-In this assignment, we will explore decision trees, support vector machines and neural networks for classification and regression. The assignment is designed to test your ability to fit and analyze these models with different configurations and compare their performance.
+In this assignment, we will explore decision trees, support vector
+machines and neural networks for classification and regression. The
+assignment is designed to test your ability to fit and analyze these
+models with different configurations and compare their performance.
 
 We will need the following packages:
-
 
 ```{R, message=FALSE, warning=FALSE, results='hide'}
 packages <- c(
@@ -56,257 +61,307 @@ packages <- c(
 sapply(packages, require, character.only=T)
 ```
 
-<br><br><br><br>
----
+## <br><br><br><br>
 
 ## Question 1
-::: {.callout-tip}
+
+::: callout-tip
 ## 60 points
+
 Prediction of Median House prices
 :::
 
 ###### 1.1 (2.5 points)
 
-
-The `data` folder contains the `housing.csv` dataset which contains housing prices in California from the 1990 California census. The objective is to predict the median house price for California districts based on various features.
-
+The `data` folder contains the `housing.csv` dataset which contains
+housing prices in California from the 1990 California census. The
+objective is to predict the median house price for California districts
+based on various features.
 
 Read the data file as a tibble in R. Preprocess the data such that:
 
-1. the variables are of the right data type, e.g., categorical variables are encoded as factors
-2. all column names to lower case for consistency
-3. Any observations with missing values are dropped
+1.  the variables are of the right data type, e.g., categorical
+    variables are encoded as factors
+2.  all column names to lower case for consistency
+3.  Any observations with missing values are dropped
 
-```R
+```{R}
 path <- "data/housing.csv"
+df <- read_csv(path)
 
-df <- ... # Insert your code here
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.2 (2.5 points)
 
-Visualize the correlation matrix of all numeric columns in `df` using `corrplot()`
+Visualize the correlation matrix of all numeric columns in `df` using
+`corrplot()`
 
-```R
-df %>% ... # Insert your code here
+```{R}
+df %>% 
+  select_if(is.numeric) %>%
+  cor() %>%
+  corrplot(method = "circle")
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.3 (5 points)
 
-Split the data `df` into `df_train` and `df_split` using `test_ind` in the code below:
+Split the data `df` into `df_train` and `df_split` using `test_ind` in
+the code below:
 
-```R
+```{R}
 set.seed(42)
 test_ind <- sample(
   1:nrow(df), 
-  floor( nrow(df)/10 ),
-  replace=FALSE
+  floor(nrow(df)/10),
+  replace = FALSE
 )
 
-df_train <- ... # Insert your code here
-df_test  <- ... # Insert your code here
+df_train <- df[-test_ind, ]
+df_test  <- df[test_ind, ]
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.4 (5 points)
 
 Fit a linear regression model to predict the `median_house_value` :
 
-* `latitude`
-* `longitude`
-* `housing_median_age`
-* `total_rooms`
-* `total_bedrooms`
-* `population`
-* `median_income`
-* `ocean_proximity`
+-   `latitude`
+-   `longitude`
+-   `housing_median_age`
+-   `total_rooms`
+-   `total_bedrooms`
+-   `population`
+-   `median_income`
+-   `ocean_proximity`
 
-Interpret the coefficients and summarize your results. 
+Interpret the coefficients and summarize your results.
 
-```R
-lm_fit <- ... # Insert your code here
-... # Insert your code here
+```{R}
+lm_fit <- lm(median_house_value ~ ., data = df_train)
+summary(lm_fit)
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.5 (5 points)
 
-Complete the `rmse` function for computing the Root Mean-Squared Error between the true `y` and the predicted `yhat`, and use it to compute the RMSE for the regression model on `df_test`
+Complete the `rmse` function for computing the Root Mean-Squared Error
+between the true `y` and the predicted `yhat`, and use it to compute the
+RMSE for the regression model on `df_test`
 
-```R
+```{R}
 rmse <- function(y, yhat) {
   sqrt(mean((y - yhat)^2))
 }
 
-lm_predictions <- ... # Insert your code here
+lm_predictions <- predict(lm_fit, df_test)
+lm_rmse <- rmse(df_test$median_house_value, lm_predictions)
+lm_rmse
 ```
-
 
 ###### 1.6 (5 points)
 
-Fit a decision tree model to predict the `median_house_value` using the same predictors as in 1.4. Use the `rpart()` function.
+Fit a decision tree model to predict the `median_house_value` using the
+same predictors as in 1.4. Use the `rpart()` function.
 
-```R
-rpart_fit <- ... # Insert your code here
-rpart_predictions <- ... # Insert your code here
+```{R}
+library(rpart)
+library(rpart.plot)
+rpart_fit <- rpart(median_house_value ~ ., data = df_train)
+rpart_predictions <- predict(rpart_fit, df_test)
+
 ```
 
+Visualize the decision tree using the `rpart.plot()` function.
 
-Visualize the decision tree using the `rpart.plot()` function. 
+```{R}
+rpart.plot(rpart_fit)
 
-```R
-... # Insert your code here
 ```
-
 
 Report the root mean squared error on the test set.
 
-```R
-rpart_predictions <- ... # Insert your code here
+rpart_rmse \<- rmse(df_test\$median_house_value, rpart_predictions)
+
+rpart_rmse
+
+```{R}
+rmse <- function(y, yhat) { sqrt(mean((y - yhat)^2)) } 
+lm_predictions <- predict(lm_fit,newdata = df_test) 
+rmse_lm <- rmse(df_test$median_house_value, lm_predictions) 
+print(rmse_lm)
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.7 (5 points)
 
-Fit a support vector machine model to predict the `median_house_value` using the same predictors as in 1.4. Use the `svm()` function and use any kernel of your choice. Report the root mean squared error on the test set.
+Fit a support vector machine model to predict the `median_house_value`
+using the same predictors as in 1.4. Use the `svm()` function and use
+any kernel of your choice. Report the root mean squared error on the
+test set.
 
-```R
-svm_fit <- ... # Insert your code here
-svm_predictions <- ... # Insert your code here
+```{R}
+svm_fit <- svm(median_house_value ~ latitude + longitude + housing_median_age + total_rooms + total_bedrooms + population + median_income + ocean_proximity, data = df_train)
+svm_predictions <- predict(svm_fit, newdata = df_test)
+svm_rmse <- rmse(df_test$median_house_value, svm_predictions)
+svm_rmse                                                                                                                           
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 1.8 (25 points)
 
 Initialize a neural network model architecture:
 
-```R
-NNet <- nn_module(
-    initialize = function(p, q1, q2, q3){
-      ... # Insert your code here
-    },
-    forward = function(x){
-      ... # Insert your code here
-    }
+```{R}
+nn <- nn_module(
+  initialize = function(p,q1,q2,q3) {
+    self$hidden1 <- nn_linear(p, q1)
+    self$hidden2 <- nn_linear(q1, q2)
+    self$hidden3 <- nn_linear(q2, q3)
+    self$output <- nn_linear(q3, 1) # Single output node for binary classification
+    self$activation <- nn_relu()
+    self$sigmoid <- nn_sigmoid()
+  },
+  forward = function(x) {
+    x %>%
+      self$hidden1() %>% self$activation() %>%
+      self$hidden2() %>% self$activation() %>%
+      self$hidden3() %>% self$activation() %>%
+      self$output() %>% self$sigmoid() # Sigmoid activation function for binary classification
+  }
 )
 ```
 
+Fit a neural network model to predict the `median_house_value` using the
+same predictors as in 1.4. Use the `model.matrix` function to create the
+covariate matrix and `luz` package for fitting the network with
+$32, 16, 8$ nodes in each of the three hidden layers.
 
-Fit a neural network model to predict the `median_house_value` using the same predictors as in 1.4. Use the `model.matrix` function to create the covariate matrix and `luz` package for fitting the network with $32, 16, 8$ nodes in each of the three hidden layers. 
+fit_nn
 
-```R
-nnet_fit <- NNet %>% 
-  setup(
-    ... # Insert your code here
-  ) %>%
-  set_hparams(
-    ... # Insert your code here
-  ) %>%
-  set_opt_params(
-    ... # Insert your code here
-  ) %>%
-  fit(
-    ... # Insert your code here
-    dataloader_options = ... # Insert your code here
-    verbose = FALSE # Change to TRUE while tuning. But, set to FALSE before submitting
+```{R}
+nnet_fit <- nn %>%
+  setup(loss = nn_bce_loss(), 
+        optimizer = optim_adam,
+        metrics = list(luz_metric_accuracy())) %>%
+  set_hparams(p = ncol(M),q1 = 32, q2 = 16, q3 = 8) %>%
+  set_opt_hparams(lr= 0.001) %>%
+  fit(data=list(
+      model.matrix(median_house_value ~ 0 + .,data = df_train),df_train %>% select(median_house_value) %>% as.matrix),
+      valid_data = list(
+      model.matrix(median_house_value ~ 0 + .,data = df_test),df_test %>% select(median_house_value) %>% as.matrix),
+      epochs = 2,
+      verbose = TRUE
+      )
 
-  )
 ```
 
 Plot the results of the training and validation loss and accuracy.
 
-```R
-... # Insert your code here
+```{R}
+plot(nnet_fit)
 ```
-
 
 Report the root mean squared error on the test set.
 
-
-```R
-nnet_predictions <- ... # Insert your code here
+```{R}
+nnet_predictions <- predict(nnet_fit, model.matrix(median_house_value ~ 0 + ., data = df_test))
+nnet_predictions <- as.array(nnet_predictions)
+rmse <- sqrt(mean((df_test$median_house_value - nnet_predictions)^2))
+print(rmse)
 ```
 
-::: {.callout-warning}
-Remember to use the `as_array()` function to convert the predictions to a vector of numbers before computing the RMSE with `rmse()`
+::: callout-warning
+Remember to use the `as_array()` function to convert the predictions to
+a vector of numbers before computing the RMSE with `rmse()`
 :::
 
----
+------------------------------------------------------------------------
 
 ###### 1.9 (5 points)
 
-Summarize your results in a table comparing the RMSE for the different models. Which model performed best? Why do you think that is?
+Summarize your results in a table comparing the RMSE for the different
+models. Which model performed best? Why do you think that is?
 
-```R
-... # Insert your code here
+```{R}
+results <- data.frame(
+  Model = c("Linear Regression", "Decision Tree", "Support Vector Machine", "Neural Network"),
+  RMSE = c(rmse_lm, rpart_rmse, svm_rmse, rmse)
+)
+
+print(results)
 ```
 
-
-
-<br><br><br><br>
-<br><br><br><br>
----
+<br><br><br><br> <br><br><br><br> ---
 
 ## Question 2
-::: {.callout-tip}
+
+::: callout-tip
 ## 50 points
+
 Spam email classification
 :::
 
-The `data` folder contains the `spam.csv` dataset. This dataset contains features extracted from a collection of spam and non-spam emails. The objective is to classify the emails as spam or non-spam.
+The `data` folder contains the `spam.csv` dataset. This dataset contains
+features extracted from a collection of spam and non-spam emails. The
+objective is to classify the emails as spam or non-spam.
 
----
+------------------------------------------------------------------------
 
 ###### 2.1 (2.5 points)
 
 Read the data file as a tibble in R. Preprocess the data such that:
 
-1. the variables are of the right data type, e.g., categorical variables are encoded as factors
-2. all column names to lower case for consistency
-3. Any observations with missing values are dropped
+1.  the variables are of the right data type, e.g., categorical
+    variables are encoded as factors
+2.  all column names to lower case for consistency
+3.  Any observations with missing values are dropped
 
-```R
-df <- ... # Insert your code here
+```{R}
+df <- read_csv("data/spambase.csv")
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 2.2 (2.5 points)
 
-Split the data `df` into `df_train` and `df_split` using `test_ind` in the code below:
+Split the data `df` into `df_train` and `df_split` using `test_ind` in
+the code below:
 
-```R
+```{R}
 set.seed(42)
 test_ind <- sample(
   1:nrow(df), 
-  floor( nrow(df)/10 ),
+  floor(nrow(df)/10),
   replace=FALSE
 )
 
-df_train <- ... # Insert your code here
-df_test  <- ... # Insert your code here
+df_train <- df[-test_ind, ]
+df_test <- df[test_ind, ]
 ```
 
-Complete the `overview` function which returns a data frame with the following columns: `accuracy`, `error`, `false positive rate`, `true positive rate`, between the true `true_class` and the predicted `pred_class` for any classification model.
+Complete the `overview` function which returns a data frame with the
+following columns: `accuracy`, `error`, `false positive rate`,
+`true positive rate`, between the true `true_class` and the predicted
+`pred_class` for any classification model.
 
-```R
+```{R}
 overview <- function(pred_class, true_class) {
-  accuracy <- ... # Insert your code here
-  error <- ... # Insert your code here
-  true_positives <- ... # Insert your code here
-  true_negatives <- ... # Insert your code here
-  false_positives <- ... # Insert your code here
-  false_negatives <- ... # Insert your code here
-  true_positive_rate <- ... # Insert your code here
-  false_positive_rate <- ...  # Insert your code here
+  accuracy <- sum(pred_class == true_class) / length(true_class)
+  error <- 1 - accuracy
+  true_positives <- sum((pred_class == 1) & (true_class == 1))
+  true_negatives <- sum((pred_class == 0) & (true_class == 0))
+  false_positives <- sum((pred_class == 1) & (true_class == 0))
+  false_negatives <- sum((pred_class == 0) & (true_class == 1))
+  true_positive_rate <- true_positives / (true_positives + false_negatives)
+  false_positive_rate <- false_positives / (false_positives + true_negatives)
   return(
     data.frame(
       accuracy = accuracy,
@@ -318,118 +373,177 @@ overview <- function(pred_class, true_class) {
 }
 ```
 
-
----
+------------------------------------------------------------------------
 
 ###### 2.3 (5 points)
 
-Fit a logistic regression model to predict the `spam` variable using the remaining predictors. Report the prediction accuracy on the test set.
+Fit a logistic regression model to predict the `spam` variable using the
+remaining predictors. Report the prediction accuracy on the test set.
 
-```R
-glm_fit <- ... # Insert your code here
-glm_classes <- ... # Insert your code here
+```{R}
+glm_fit <- glm(spam ~ ., data = df_train, family = "binomial")
+glm_classes <- predict(glm_fit, df_test, type = "response") > 0.5
+glm_overview <- overview(glm_classes, df_test$spam)
+print(glm_overview)
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 2.4 (5 points)
 
-Fit a decision tree model to predict the `spam` variable using the remaining predictors. Use the `rpart()` function and set the `method` argument to `"class"`. 
+Fit a decision tree model to predict the `spam` variable using the
+remaining predictors. Use the `rpart()` function and set the `method`
+argument to `"class"`.
 
-```R
-rpart_classes <- ... # Insert your code here
+```{R}
+rpart_fit <- rpart(spam ~ ., data = df_train, method = "class")
+rpart_classes <- predict(rpart_fit, df_test, type = "class")
 ```
 
-Visualize the decision tree using the `rpart.plot()` function. 
+Visualize the decision tree using the `rpart.plot()` function.
 
-```R
-... # Insert your code here
+```{R}
+library(rpart.plot)
+rpart.plot(rpart_fit)
 ```
 
 Report the prediction accuracy on the test set.
 
-```R
-rpart_classes <- ... # Insert your code here
+```{R}
+rpart_overview <- overview(rpart_classes, df_test$spam)
+print(rpart_overview)
+
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 2.5 (5 points)
 
-Fit a support vector machine model to predict the `spam` variable using the remaining predictors. Use the `svm()` function and use any kernel of your choice. Remember to set the `type` argument to `"C-classification"` **if you haven't** already converted `spam` to be of type `factor`.
+Fit a support vector machine model to predict the `spam` variable using
+the remaining predictors. Use the `svm()` function and use any kernel of
+your choice. Remember to set the `type` argument to `"C-classification"`
+**if you haven't** already converted `spam` to be of type `factor`.
 
-
-```R
-svm_fit <- ... # Insert your code here
+```{R}
+svm_fit <- svm(spam ~ ., data = df_train, type = "C-classification")
+svm_classes <- predict(svm_fit, df_test)
 ```
+
 Report the prediction accuracy on the test set.
 
-```R
-svm_classes <- ... # Insert your code here
+```{R}
+svm_overview <- overview(svm_classes, df_test$spam)
+print(svm_overview)
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 2.6 (25 points)
 
-Using the same neural network architecture as in 1.9, fit a neural network model to predict the `spam` variable using the remaining predictors. 
+Using the same neural network architecture as in 1.9, fit a neural
+network model to predict the `spam` variable using the remaining
+predictors.
 
-::: {.callout-warning}
+::: callout-warning
 ## Classification vs. Regression
 
-Note that the neural network in **Q 1.9** was a regression model. You will need to modify the neural network architecture to be a classification model by changing the output layer to have a single node with a sigmoid activation function.
+Note that the neural network in **Q 1.9** was a regression model. You
+will need to modify the neural network architecture to be a
+classification model by changing the output layer to have a single node
+with a sigmoid activation function.
 :::
 
-Use the `model.matrix` function to create the covariate matrix and `luz` package for fitting the network with $32, 16, 8$ nodes in each of the three hidden layers. 
+Use the `model.matrix` function to create the covariate matrix and `luz`
+package for fitting the network with $32, 16, 8$ nodes in each of the
+three hidden layers.
 
-```R
-nnet_fit <- NNet %>% 
-  setup(
-    ... # Insert your code here
-  ) %>%
-  set_hparams(
-    ... # Insert your code here
-  ) %>%
-  set_opt_params(
-    ... # Insert your code here
-  ) %>%
-  fit(
-    ... # Insert your code here
-    dataloader_options = ... # Insert your code here
-    verbose = FALSE # Change to TRUE while tuning. But, set to FALSE before submitting
+```{R}
+NNet <- nn_module(
+  initialize = function(p, q1, q2, q3){
+    weights <- list(
+      W1 = torch_randn(q1, p),
+      W2 = torch_randn(q2, q1),
+      W3 = torch_randn(q3, q2),
+      W_out = torch_randn(1, q3)  
+    )
+    biases <- list(
+      b1 = torch_randn(q1),
+      b2 = torch_randn(q2),
+      b3 = torch_randn(q3),
+      b_out = torch_randn(1) 
+    )
+    return(list(weights = weights, biases = biases))
+  },
+  forward = function(x){
+    W1 <- self$weights$W1
+    W2 <- self$weights$W2
+    W3 <- self$weights$W3
+    W_out <- self$weights$W_out 
 
-  )
+    b1 <- self$biases$b1
+    b2 <- self$biases$b2
+    b3 <- self$biases$b3
+    b_out <- self$biases$b_out 
+    
+    z1 <- torch_addmm(b1, x, torch_t(W1))
+    a1 <- torch_relu(z1)
+    z2 <- torch_addmm(b2, a1, torch_t(W2))
+    a2 <- torch_relu(z2)
+    z3 <- torch_addmm(b3, a2, torch_t(W3))
+    a3 <- torch_relu(z3)
+    
+    # Output layer with sigmoid activation function
+    logits <- torch_addmm(b_out, a3, torch_t(W_out))
+    output <- torch_sigmoid(logits)
+    
+    return(output)
+  }
+)
+covariate_matrix <- model.matrix(spam ~ ., data = df_train)[,-1]  # Exclude intercept column
+target <- ifelse(df_train$spam == "spam", 1, 0)
+
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 2.7 (5 points)
 
-Summarize your results in a table comparing the accuracy metrics for the different models. 
+Summarize your results in a table comparing the accuracy metrics for the
+different models.
 
-```R
-... # Insert your code here
+```{R}
+accuracy_logistic <- mean(glm_classes == df_test$spam)
+accuracy_decision_tree <- mean(rpart_classes == df_test$spam)
+accuracy_svm <- mean(svm_classes == df_test$spam)
+
+results <- data.frame(
+  Model = c("Logistic Regression", "Decision Tree", "SVM"), #"Neural Network"),
+  Accuracy = c(accuracy_logistic, accuracy_decision_tree, accuracy_svm) #, accuracy_neural_network)
+)
+
+print(results) # Insert your code here
 ```
 
-If you were to choose a model to classify spam emails, which model would you choose? Think about the context of the problem and the cost of false positives and false negatives.
+If you were to choose a model to classify spam emails, which model would
+you choose? Think about the context of the problem and the cost of false
+positives and false negatives.
 
-
-
-<br><br><br><br>
-<br><br><br><br>
----
+<br><br><br><br> <br><br><br><br> ---
 
 ## Question 3
-::: {.callout-tip}
+
+::: callout-tip
 ## 60 points
 
 Three spirals classification
-
 :::
 
-To better illustrate the power of depth in neural networks, we will use a toy dataset called the "Three Spirals" data. This dataset consists of two intertwined spirals, making it challenging for shallow models to classify the data accurately. 
+To better illustrate the power of depth in neural networks, we will use
+a toy dataset called the "Three Spirals" data. This dataset consists of
+two intertwined spirals, making it challenging for shallow models to
+classify the data accurately.
 
-::: {.callout-warning}
+::: callout-warning
 ## This is a multi-class classification problem
 :::
 
@@ -462,12 +576,12 @@ generate_three_spirals <- function(){
 }
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 3.1 (5 points)
 
-Generate the three spirals dataset using the code above. Plot $x_1$ vs $x_2$ and use the `y` variable to color the points. 
-
+Generate the three spirals dataset using the code above. Plot $x_1$ vs
+$x_2$ and use the `y` variable to color the points.
 
 ```{R}
 df <- generate_three_spirals()
@@ -479,27 +593,36 @@ plot(
 )
 ```
 
-Define a grid of $100$ points from $-10$ to $10$ in both $x_1$ and $x_2$ using the `expand.grid()`. Save it as a tibble called `df_test`. 
+Define a grid of $100$ points from $-10$ to $10$ in both $x_1$ and $x_2$
+using the `expand.grid()`. Save it as a tibble called `df_test`.
 
-```R
-grid <- ... # Insert your code here
-df_test <- ... # Insert your code here
+```{R}
+grid <- seq(-10, 10, length.out = 100)
+df_test <- tibble(x1 = rep(grid, 100), x2 = rep(grid, each = 100))
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 3.2 (10 points)
 
-Fit a classification tree model to predict the `y` variable using the `x1` and `x2` predictors, and plot the decision boundary. 
+Fit a classification tree model to predict the `y` variable using the
+`x1` and `x2` predictors, and plot the decision boundary.
 
-```R
-rpart_fit <- ... # Insert your code here
-rpart_classes <- ... # Insert your code here
+```{R}
+rpart_fit <- rpart(y ~ x1 + x2, data = df, method = "class")
+rpart_classes <- predict(rpart_fit, df_test, type = "class")
+
+plot_decision_boundary <- function(predictions){
+plot(df_test$x1, df_test$x2, col = predictions, pch = 0)
+points(df$x1, df$x2, col = df$y, pch = 20)
+}
+
+plot_decision_boundary(rpart_classes)
 ```
 
 Plot the decision boundary using the following function:
 
-```R
+```{R}
 plot_decision_boundary <- function(predictions){
   plot(
     df_test$x1, df_test$x2, 
@@ -514,49 +637,56 @@ plot_decision_boundary <- function(predictions){
 }
 ```
 
-```R
+```{R}
 plot_decision_boundary(rpart_classes)
 ```
 
----
+------------------------------------------------------------------------
 
 ###### 3.3 (10 points)
 
-Fit a support vector machine model to predict the `y` variable using the `x1` and `x2` predictors. Use the `svm()` function and use any kernel of your choice. Remember to set the `type` argument to `"C-classification"` **if you haven't** converted `y` to be of type `factor`.
+Fit a support vector machine model to predict the `y` variable using the
+`x1` and `x2` predictors. Use the `svm()` function and use any kernel of
+your choice. Remember to set the `type` argument to `"C-classification"`
+**if you haven't** converted `y` to be of type `factor`.
 
-```R
-svm_fit <- ... # Insert your code here
-svm_classes <- ... # Insert your code here
+```{R}
+svm_fit <- svm(y ~ x1 + x2, data = df, type = "C-classification")
+svm_classes <- predict(svm_fit, df_test)
 plot_decision_boundary(svm_classes)
 ```
 
----
+------------------------------------------------------------------------
 
-::: {.callout-warning}
+::: callout-warning
 ## Instructions
 
-For the next questions, you will need to fit a series of neural networks. In all cases, you can:
+For the next questions, you will need to fit a series of neural
+networks. In all cases, you can:
 
-* set the number of units in each hidden layer to 10 
-* set the output dimension `o` to 3 (remember this is multinomial classification)
-* use the appropriate loss function for the problem (**not `nn_bce_loss`**)
-* set the number of epochs to $50$
-* fit the model using the `luz` package
+-   set the number of units in each hidden layer to 10
+-   set the output dimension `o` to 3 (remember this is multinomial
+    classification)
+-   use the appropriate loss function for the problem (**not
+    `nn_bce_loss`**)
+-   set the number of epochs to $50$
+-   fit the model using the `luz` package
 
-You can use any optimizer of your choice, but you **will need to tune the learning rate for each problem**.
+You can use any optimizer of your choice, but you **will need to tune
+the learning rate for each problem**.
 :::
-
 
 ###### 3.4 (10 points)
 
-Fit a neural network with **1 hidden layer** to predict the `y` variable using the `x1` and `x2` predictors.
+Fit a neural network with **1 hidden layer** to predict the `y` variable
+using the `x1` and `x2` predictors.
 
-```R
+```{R}
 NN1 <- nn_module(
   initialize = function(p, q1, o){
-    self$hidden1 <- ... # Insert your code here
-    self$output <- ... # Insert your code here
-    self$activation <- ... # Insert your code here
+    self$hidden1 <- nn_linear(p, q1) # Insert your code here
+    self$output <- nn_linear(q1, o) # Insert your code here
+    self$activation <- nn_relu() # Insert your code here
   },
   forward = function(x){
     x %>% 
@@ -565,112 +695,90 @@ NN1 <- nn_module(
       self$output()
   }
 )
-
-fit_1 <- NN1 %>% 
-  setup(
-    ... # Insert your code here
-  ) %>%
-  set_hparams(
-    ... # Insert your code here
-  ) %>%
-  set_opt_params(
-    ... # Insert your code here
-  ) %>%
-  fit(
-    data = list(
-      df %>% select(x1, x2) %>% as.matrix,
-      df$y %>% as.integer
-    ),
-    ... # Insert your code here
-    dataloader_options = ... # Insert your code here
-    verbose = FALSE
-  )
 ```
 
-In order to generate the class predictions, you will need to use the `predict()` function as follows
+In order to generate the class predictions, you will need to use the
+`predict()` function as follows
 
-```R
+```{R}
 test_matrix <- df_test %>% select(x1, x2) %>% as.matrix
 
-fit_1_predictions <- predict(fit_1, test_matrix) %>% 
-  argmax(2) %>% 
-  as.integer()
 ```
 
 Plot the results using the `plot_decision_boundary()` function.
 
----
+------------------------------------------------------------------------
 
 ###### 3.5 (10 points)
 
-Fit a neural network with **0 hidden layers** to predict the `y` variable using the `x1` and `x2` predictors.
+Fit a neural network with **0 hidden layers** to predict the `y`
+variable using the `x1` and `x2` predictors.
 
-```R
+```{R}
 NN0 <- nn_module(
   initialize = function(p, o){
-    ... # Insert your code here
+    self$output <- nn_linear(p, o) # Insert your code here
   },
   forward = function(x){
     x %>% 
-    ... # Insert your code here
+      self$output() # Insert your code here
   }
 )
 
-fit_0 <- NN0 %>% 
-  setup(...) %>%
-  set_hparams(...) %>%
-  set_opt_params(...) %>%
-  fit(...)
 ```
 
 Plot the results using the `plot_decision_boundary()` function.
 
----
-
+------------------------------------------------------------------------
 
 ###### 3.6 (10 points)
 
-Fit a neural network with **3 hidden layers** to predict the `y` variable using the `x1` and `x2` predictors.
+Fit a neural network with **3 hidden layers** to predict the `y`
+variable using the `x1` and `x2` predictors.
 
-```R
+```{R}
 NN2 <- nn_module(
   initialize = function(p, q1, q2, o){
-    ... # Insert your code here
+    self$hidden1 <- nn_linear(p, q1)
+    self$hidden2 <- nn_linear(q1, q2)
+    self$hidden3 <- nn_linear(q2, q2)
+    self$output <- nn_linear(q2, o)
+    self$activation <- nn_relu() # Insert your code here
   },
   forward = function(x){
     x %>% 
-    ... # Insert your code here
+      self$hidden1() %>% 
+      self$activation() %>% 
+      self$hidden2() %>% 
+      self$activation() %>% 
+      self$hidden3() %>% 
+      self$activation() %>% 
+      self$output() # Insert your code here
   }
 )
-
-fit_2 <- NN3 %>% 
-  setup(...) %>%
-  set_hparams(...) %>%
-  set_opt_params(...) %>%
-  fit(...)
 ```
 
 Plot the results using the `plot_decision_boundary()` function.
 
----
+------------------------------------------------------------------------
 
 ###### 3.7 (5 points)
 
-What are the differences between the models? How do the decision boundaries change as the number of hidden layers increases?
+What are the differences between the models? How do the decision
+boundaries change as the number of hidden layers increases?
 
+As the number of hidden layers in the neural network models increases,
+the decision boundaries become more complex and flexible, allowing the
+model to better capture the underlying structure of the three-spirals
+dataset.
 
----
+------------------------------------------------------------------------
 
-
-:::{.hidden unless-format="pdf"}
+::: {.hidden unless-format="pdf"}
 \pagebreak
 :::
 
-<br><br><br><br>
-<br><br><br><br>
----
-
-
+<br><br><br><br> <br><br><br><br> ---
 
 ::: {.callout-note collapse="true"}
 ## Session Information
